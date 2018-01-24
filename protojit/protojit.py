@@ -121,6 +121,12 @@ class Serializer(object):
                     s += msg_str
                 n = number['_']
                 number['_'] += 1
+
+                # "Field numbers 19000 through 19999 are reserved for the protocol buffer library
+                # implementation."
+                if number['_'] == 19000:
+                    number['_'] = 20000
+
                 return '{}\n{} {} = {};'.format(s, fty.name(), k, n)
 
             field_strs = [
@@ -159,7 +165,7 @@ class Serializer(object):
             else:
                 setattr(desc, k, obj[k])
 
-    def serialize(self, obj):
+    def dumps(self, obj):
         desc = self._desc()
         self._serialize(desc, self._ty, obj)
         return desc.SerializeToString()
@@ -182,12 +188,7 @@ class Serializer(object):
             obj[k] = v
         return obj
 
-    def deserialize(self, s):
+    def loads(self, s):
         desc = self._desc()
         desc.ParseFromString(s)
         return self._deserialize(desc, self._ty)
-
-
-x = {'a': 1, 'b': 'c', 'd': [{'e': 2, 'f': ['g', 'h']}]}
-ser = Serializer(x)
-print(ser.deserialize(ser.serialize(x)) == x)

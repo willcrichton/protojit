@@ -3,7 +3,7 @@ from protojit import Serializer
 
 def _test(x):
     s = Serializer(x)
-    assert s.deserialize(s.serialize(x)) == x
+    assert s.loads(s.dumps(x)) == x
 
 
 def test_basic():
