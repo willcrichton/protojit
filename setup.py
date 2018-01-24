@@ -8,5 +8,5 @@ setup(
     author='Will Crichton',
     author_email='wcrichto@cs.stanford.edu',
     license='Apache 2.0',
-    packages=[],
+    packages=['protojit'],
     zip_safe=False)

@@ -74,9 +74,14 @@ type_map = {
     bytes: TBytes()
 }
 
+SERIALIZER_COUNTER = 0
+
 
 class Serializer(object):
     def __init__(self, obj):
+        global SERIALIZER_COUNTER
+        self._prefix = 'msg{}'.format(SERIALIZER_COUNTER)
+        SERIALIZER_COUNTER += 1
         self._ty_counter = 0
         self._ty = self._typecheck(obj)
         assert isinstance(self._ty, TMessage)
@@ -99,7 +104,7 @@ class Serializer(object):
 
     def _gen_string(self, ty):
         if isinstance(ty, TMessage):
-            name = '_{}'.format(self._ty_counter)
+            name = '{}_{}'.format(self._prefix, self._ty_counter)
             ty._name = name
             self._ty_counter += 1
 
@@ -126,20 +131,20 @@ class Serializer(object):
 
     def _make_descriptor(self, ty):
         msg_str = self._gen_string(ty)
-        #print(msg_str)
 
         out_dir = tempfile.mkdtemp()
-        proto_path = out_dir + '/msg.proto'
+        proto_path = '{}/{}.proto'.format(out_dir, self._prefix)
         with open(proto_path, 'w') as f:
             f.write('syntax = "proto3";\n{}'.format(msg_str))
         sp.check_call(
             'protoc --proto_path={} {} --python_out={}'.format(
                 out_dir, proto_path, out_dir),
             shell=True)
-        mod = imp.load_source('<proto>', out_dir + '/msg_pb2.py')
+        mod = imp.load_source('<proto>', '{}/{}_pb2.py'.format(
+            out_dir, self._prefix))
         shutil.rmtree(out_dir)
 
-        return mod._0
+        return getattr(mod, '{}_0'.format(self._prefix))
 
     def _serialize(self, desc, obj_ty, obj):
         for k, fty in obj_ty.field_tys.iteritems():
