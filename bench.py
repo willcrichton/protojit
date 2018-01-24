@@ -6,10 +6,11 @@ from timeit import default_timer as now
 import gc
 
 
-def time(f):
+def time(f, iters=10):
     gc.disable()
     start = now()
-    f()
+    for _ in range(iters):
+        f()
     end = now() - start
     gc.enable()
     return end
@@ -53,8 +54,9 @@ def deserialize_time_test(value):
 
 def print_results(d):
     order = ['protojit', 'pickle', 'marshal', 'json']
+    minv = min(d.values())
     for k in order:
-        print('{}: {}'.format(k, d[k]))
+        print('{}: {:.2f} ({})'.format(k, float(d[k]) / minv, d[k]))
 
 
 def main():
@@ -65,6 +67,16 @@ def main():
             'b': 'hello',
             'c': 'foo' * 1000,
             'd': [{'a': 'b'} for _ in range(10000)]
+        }),
+        ('manyrecords', {
+            'a': [
+                {
+                    'b': 1,
+                    'c': 'd',
+                    'e': 'f'
+                }
+                for _ in range(100000)
+            ]
         }),
         ('manyfields', {
             'foo{}'.format(k): 1
