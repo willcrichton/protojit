@@ -4,19 +4,8 @@ import tempfile
 import struct
 import shutil
 import imp
-
-class Timer:
-    def __init__(self, s):
-        self.s = s
-        print('-- START: {}'.format(s))
-
-    def __enter__(self):
-        self.start = now()
-
-    def __exit__(self, a, b, c):
-        t = now() - self.start
-        print('-- END: {:.3f} --'.format(t))
-
+import bz2
+import zlib
 
 
 class ProtoType(object):
@@ -151,7 +140,6 @@ class Serializer(object):
 
     def _make_descriptor(self, ty):
         msg_str = self._gen_string(ty)
-
         out_dir = tempfile.mkdtemp()
         proto_path = '{}/{}.proto'.format(out_dir, self._prefix)
         with open(proto_path, 'w') as f:
@@ -181,10 +169,8 @@ class Serializer(object):
 
     def dumps(self, obj):
         desc = self._desc()
-        with Timer('To proto'):
-            self._serialize(desc, self._ty, obj)
-        with Timer('serialize'):
-            x = desc.SerializeToString()
+        self._serialize(desc, self._ty, obj)
+        x = desc.SerializeToString()
         return x
 
     def _deserialize(self, desc, obj_ty):
@@ -209,23 +195,3 @@ class Serializer(object):
         desc = self._desc()
         desc.ParseFromString(s)
         return self._deserialize(desc, self._ty)
-
-if __name__ == '__main__':
-    x = {
-            'a': [
-                {
-                    'b': 1,
-                    'c': 'd',
-                    'e': 'f'
-                }
-                for _ in range(100000)
-            ]
-        }
-    print(len(Serializer(x).dumps(x)))
-    import marshal
-    import cPickle as pickle
-    with Timer('marshal'):
-        print(len(marshal.dumps(x)))
-    with Timer('pickle'):
-        print(len(pickle.dumps(x)))
-    

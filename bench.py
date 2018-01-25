@@ -5,6 +5,15 @@ import json
 from timeit import default_timer as now
 import gc
 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+matplotlib.rcParams['figure.figsize'] = (16, 5)
+plt.rc("axes.spines", top=False, right=False)
+sns.set_style('white')
+
 
 def time(f, iters=10):
     gc.disable()
@@ -52,11 +61,19 @@ def deserialize_time_test(value):
     return {k: time(v) for k, v in d.iteritems()}
 
 
-def print_results(d):
+def print_results(name, d):
     order = ['protojit', 'pickle', 'marshal', 'json']
     minv = min(d.values())
+    ratios = [float(d[k]) / minv for k in order]
     for k in order:
         print('{}: {:.2f} ({})'.format(k, float(d[k]) / minv, d[k]))
+
+    plt.title(name)
+    plt.bar(order, ratios)
+    # for rect, r in zip(plt.patches, ratios):
+    #     plt.annotate(
+    #         '{:.2f}'.format(r),
+    #         xy=(rect.get_x() + rect.get_width() / 2, rect.get_height() + 5))
 
 
 def main():
@@ -71,35 +88,38 @@ def main():
         ('manyrecords', {
             'a': [
                 {
-                    'b': 1,
-                    'c': 'd',
-                    'e': 'f'
+                    'b': i,
+                    'c': 'qq',
+                    'e': i+2
                 }
-                for _ in range(100000)
+                for i in range(100000)
             ]
         }),
         ('manyfields', {
             'foo{}'.format(k): 1
-            for k in range(100000)
+            for k in range(10000)
         })
     ]  # yapf: disable
 
-    print('SIZE TESTS')
-    for (k, v) in values:
-        print('== {} =='.format(k))
-        print_results(size_test(v))
-    print('')
+    # print('SIZE TESTS')
+    # plt.clf()
+    # for i, (k, v) in enumerate(values):
+    #     plt.subplot(1, len(values), i + 1)
+    #     print('== {} =='.format(k))
+    #     print_results('size_' + k, size_test(v))
+    # plt.savefig('benchmarks/size.png', dpi=300)
+    # print('')
 
-    print('SERIALIZE TIME TESTS')
-    for (k, v) in values:
-        print('== {} =='.format(k))
-        print_results(serialize_time_test(v))
-    print('')
+    # print('SERIALIZE TIME TESTS')
+    # for (k, v) in values:
+    #     print('== {} =='.format(k))
+    #     print_results('serialize_' + k, serialize_time_test(v))
+    # print('')
 
     print('DESERIALIZE TIME TESTS')
     for (k, v) in values:
         print('== {} =='.format(k))
-        print_results(deserialize_time_test(v))
+        print_results('deserialize_' + k, deserialize_time_test(v))
     print('')
 
 
